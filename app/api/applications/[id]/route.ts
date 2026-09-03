@@ -51,7 +51,7 @@ export async function PATCH(
   const application = await Application.findOneAndUpdate(
     { _id: params.id, userId: session.user.id },
     { $set: fields },
-    { new: true, runValidators: true }
+    { returnDocument: "after", runValidators: true }
   );
 
   if (!application) {

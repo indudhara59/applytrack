@@ -1,13 +1,13 @@
 import Link from "next/link";
 import AuthCard from "../AuthCard";
 import GoogleSignInButton from "../GoogleSignInButton";
-import LoginForm from "./LoginForm";
+import SignupForm from "./SignupForm";
 
-export default function LoginPage() {
+export default function SignupPage() {
   return (
     <AuthCard
-      title="Welcome back"
-      subtitle="Sign in to keep tracking your job applications."
+      title="Create your account"
+      subtitle="Start tracking every job application in one place."
     >
       <div className="flex flex-col gap-4">
         <GoogleSignInButton />
@@ -18,15 +18,15 @@ export default function LoginPage() {
           <div className="h-px flex-1 bg-slate-200" />
         </div>
 
-        <LoginForm />
+        <SignupForm />
 
         <p className="text-center text-xs text-slate-500">
-          Don&apos;t have an account?{" "}
+          Already have an account?{" "}
           <Link
-            href="/signup"
+            href="/login"
             className="font-medium text-indigo-600 hover:underline"
           >
-            Sign up
+            Sign in
           </Link>
         </p>
       </div>

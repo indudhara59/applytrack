@@ -1,10 +1,7 @@
-import {
-  APPLICATION_STATUSES,
-  STATUS_PLURAL_LABELS,
-  type ApplicationStatus,
-} from "@/lib/applicationStatus";
+import type { ApplicationStatus } from "@/lib/applicationStatus";
 import { CARD } from "@/lib/ui";
 import type { ApplicationRecord } from "./ApplicationsTable";
+import StatusBarChart from "./StatusBarChart";
 
 const UPCOMING_WINDOW_DAYS = 7;
 
@@ -21,16 +18,6 @@ export default function StatsSummary({
     {} as Record<ApplicationStatus, number>
   );
 
-  const statusSummary = APPLICATION_STATUSES.filter(
-    (status) => countsByStatus[status] > 0
-  )
-    .map((status) => {
-      const count = countsByStatus[status];
-      const label = count === 1 ? status : STATUS_PLURAL_LABELS[status];
-      return `${count} ${label}`;
-    })
-    .join(", ");
-
   const now = Date.now();
   const windowEnd = now + UPCOMING_WINDOW_DAYS * 24 * 60 * 60 * 1000;
   const upcomingFollowUps = applications.filter((application) => {
@@ -40,17 +27,25 @@ export default function StatsSummary({
   }).length;
 
   return (
-    <div className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-3">
-      <StatCard label="Total Applications" value={applications.length} />
-      <div className={`${CARD} p-4`}>
-        <p className="text-sm font-medium text-slate-500">By Status</p>
-        <p className="mt-1 text-sm text-slate-900">{statusSummary || "—"}</p>
+    <div className="mb-6 flex flex-col gap-4">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+        <StatCard label="Total Applications" value={applications.length} />
+        <StatCard
+          label={`Follow-ups Due (${UPCOMING_WINDOW_DAYS} days)`}
+          value={upcomingFollowUps}
+          accent={upcomingFollowUps > 0}
+        />
       </div>
-      <StatCard
-        label={`Follow-ups Due (${UPCOMING_WINDOW_DAYS} days)`}
-        value={upcomingFollowUps}
-        accent={upcomingFollowUps > 0}
-      />
+
+      <div className={`${CARD} p-5`}>
+        <p className="mb-4 text-sm font-medium text-slate-500">
+          Applications by Status
+        </p>
+        <StatusBarChart
+          counts={countsByStatus}
+          total={applications.length}
+        />
+      </div>
     </div>
   );
 }

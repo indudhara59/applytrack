@@ -4,6 +4,7 @@ import { auth, signOut } from "@/auth";
 import dbConnect from "@/lib/mongodb";
 import Application from "@/lib/models/Application";
 import { BUTTON_PRIMARY, BUTTON_SECONDARY } from "@/lib/ui";
+import ApplicationActivity from "./ApplicationActivity";
 import ApplicationsTable, { type ApplicationRecord } from "./ApplicationsTable";
 import StatsSummary from "./StatsSummary";
 
@@ -73,6 +74,7 @@ export default async function DashboardPage() {
       ) : (
         <>
           <StatsSummary applications={applications} />
+          <ApplicationActivity applications={applications} />
           <ApplicationsTable applications={applications} />
         </>
       )}
