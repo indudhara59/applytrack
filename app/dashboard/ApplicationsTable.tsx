@@ -5,6 +5,7 @@ import Link from "next/link";
 import {
   APPLICATION_STATUSES,
   STATUS_BADGE_STYLES,
+  STATUS_ROW_STYLES,
   type ApplicationStatus,
 } from "@/lib/applicationStatus";
 import { CARD } from "@/lib/ui";
@@ -17,6 +18,7 @@ export interface ApplicationRecord {
   status: ApplicationStatus;
   resumeVersionLabel: string | null;
   resumeUrl: string | null;
+  jobPostingUrl: string | null;
   followUpDate: string | null;
   followUpDone: boolean;
   notes: string | null;
@@ -26,50 +28,32 @@ type SortDirection = "asc" | "desc";
 
 export default function ApplicationsTable({
   applications,
+  pendingId,
+  onStatusChange,
+  onToggleFollowUpDone,
 }: {
   applications: ApplicationRecord[];
+  pendingId: string | null;
+  onStatusChange: (id: string, status: ApplicationStatus) => void;
+  onToggleFollowUpDone: (id: string, next: boolean) => void;
 }) {
-  const [items, setItems] = useState(applications);
   const [statusFilter, setStatusFilter] = useState<ApplicationStatus | "All">(
     "All"
   );
   const [sortDirection, setSortDirection] = useState<SortDirection>("desc");
-  const [pendingId, setPendingId] = useState<string | null>(null);
 
   const visible = useMemo(() => {
     const filtered =
       statusFilter === "All"
-        ? items
-        : items.filter((a) => a.status === statusFilter);
+        ? applications
+        : applications.filter((a) => a.status === statusFilter);
 
     return [...filtered].sort((a, b) => {
       const aTime = a.dateApplied ? new Date(a.dateApplied).getTime() : 0;
       const bTime = b.dateApplied ? new Date(b.dateApplied).getTime() : 0;
       return sortDirection === "asc" ? aTime - bTime : bTime - aTime;
     });
-  }, [items, statusFilter, sortDirection]);
-
-  async function toggleFollowUpDone(id: string, next: boolean) {
-    setPendingId(id);
-    setItems((prev) =>
-      prev.map((a) => (a._id === id ? { ...a, followUpDone: next } : a))
-    );
-
-    try {
-      const res = await fetch(`/api/applications/${id}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ followUpDone: next }),
-      });
-      if (!res.ok) throw new Error("Failed to update");
-    } catch {
-      setItems((prev) =>
-        prev.map((a) => (a._id === id ? { ...a, followUpDone: !next } : a))
-      );
-    } finally {
-      setPendingId(null);
-    }
-  }
+  }, [applications, statusFilter, sortDirection]);
 
   return (
     <div>
@@ -137,69 +121,104 @@ export default function ApplicationsTable({
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100 bg-white">
-            {visible.map((application) => (
-              <tr
-                key={application._id}
-                className="transition-colors hover:bg-slate-50"
-              >
-                <td className="px-4 py-3 font-medium text-slate-900">
-                  {application.company}
-                </td>
-                <td className="px-4 py-3 text-slate-700">
-                  {application.role}
-                </td>
-                <td className="px-4 py-3 text-slate-700">
-                  {formatDate(application.dateApplied)}
-                </td>
-                <td className="px-4 py-3">
-                  <span
-                    className={`rounded-full px-2.5 py-0.5 text-xs font-medium ${STATUS_BADGE_STYLES[application.status]}`}
-                  >
-                    {application.status}
-                  </span>
-                </td>
-                <td className="px-4 py-3">
-                  {application.resumeUrl ? (
-                    <a
-                      href={application.resumeUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="font-medium text-indigo-600 hover:text-indigo-500 hover:underline"
+            {visible.map((application) => {
+              const isPending = pendingId === application._id;
+              const rowStyle =
+                STATUS_ROW_STYLES[application.status] ?? "hover:bg-slate-50";
+              const jobUrl = application.jobPostingUrl;
+
+              return (
+                <tr
+                  key={application._id}
+                  className={`transition-colors ${rowStyle} ${jobUrl ? "cursor-pointer" : ""}`}
+                >
+                  <td className="relative px-4 py-3 font-medium text-slate-900">
+                    <RowLinkOverlay
+                      href={jobUrl}
+                      label={`Open job posting for ${application.company}`}
+                    />
+                    {application.company}
+                  </td>
+                  <td className="relative px-4 py-3 text-slate-700">
+                    <RowLinkOverlay href={jobUrl} />
+                    {application.role}
+                  </td>
+                  <td className="relative px-4 py-3 text-slate-700">
+                    <RowLinkOverlay href={jobUrl} />
+                    {formatDate(application.dateApplied)}
+                  </td>
+                  <td className="relative px-4 py-3">
+                    <RowLinkOverlay href={jobUrl} />
+                    <select
+                      value={application.status}
+                      disabled={isPending}
+                      onChange={(e) =>
+                        onStatusChange(
+                          application._id,
+                          e.target.value as ApplicationStatus
+                        )
+                      }
+                      aria-label={`Status for ${application.company}`}
+                      className={`relative cursor-pointer rounded-full border-0 py-0.5 pl-2.5 pr-6 text-xs font-medium focus:outline-none focus:ring-2 focus:ring-indigo-500/40 disabled:cursor-not-allowed disabled:opacity-60 ${STATUS_BADGE_STYLES[application.status]}`}
                     >
-                      {application.resumeVersionLabel || "Resume"}
-                    </a>
-                  ) : (
-                    <span className="text-slate-400">—</span>
-                  )}
-                </td>
-                <td className="px-4 py-3 text-slate-700">
-                  {formatDate(application.followUpDate)}
-                </td>
-                <td className="px-4 py-3">
-                  <input
-                    type="checkbox"
-                    checked={application.followUpDone}
-                    disabled={pendingId === application._id}
-                    onChange={(e) =>
-                      toggleFollowUpDone(application._id, e.target.checked)
-                    }
-                    className="h-4 w-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500/40"
-                    aria-label={`Follow-up done for ${application.company}`}
-                  />
-                </td>
-                <td className="max-w-xs truncate px-4 py-3 text-slate-500">
-                  {application.notes}
-                </td>
-                <td className="whitespace-nowrap px-4 py-3 text-right">
-                  <Link
-                    href={`/dashboard/${application._id}/edit`}
-                    className="text-sm font-medium text-indigo-600 hover:text-indigo-500 hover:underline"
-                  >
-                    Edit
-                  </Link>
-                </td>
-              </tr>
-            ))}
+                      {APPLICATION_STATUSES.map((status) => (
+                        <option key={status} value={status}>
+                          {status}
+                        </option>
+                      ))}
+                    </select>
+                  </td>
+                  <td className="relative px-4 py-3">
+                    <RowLinkOverlay href={jobUrl} />
+                    {application.resumeUrl ? (
+                      <a
+                        href={application.resumeUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="relative font-medium text-indigo-600 hover:text-indigo-500 hover:underline"
+                      >
+                        {application.resumeVersionLabel || "Resume"}
+                      </a>
+                    ) : (
+                      <span className="text-slate-400">—</span>
+                    )}
+                  </td>
+                  <td className="relative px-4 py-3 text-slate-700">
+                    <RowLinkOverlay href={jobUrl} />
+                    {formatDate(application.followUpDate)}
+                  </td>
+                  <td className="relative px-4 py-3">
+                    <RowLinkOverlay href={jobUrl} />
+                    <input
+                      type="checkbox"
+                      checked={application.followUpDone}
+                      disabled={isPending}
+                      onChange={(e) =>
+                        onToggleFollowUpDone(
+                          application._id,
+                          e.target.checked
+                        )
+                      }
+                      className="relative h-4 w-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500/40"
+                      aria-label={`Follow-up done for ${application.company}`}
+                    />
+                  </td>
+                  <td className="relative max-w-xs truncate px-4 py-3 text-slate-500">
+                    <RowLinkOverlay href={jobUrl} />
+                    {application.notes}
+                  </td>
+                  <td className="relative whitespace-nowrap px-4 py-3 text-right">
+                    <RowLinkOverlay href={jobUrl} />
+                    <Link
+                      href={`/dashboard/${application._id}/edit`}
+                      className="relative text-sm font-medium text-indigo-600 hover:text-indigo-500 hover:underline"
+                    >
+                      Edit
+                    </Link>
+                  </td>
+                </tr>
+              );
+            })}
             {visible.length === 0 && (
               <tr>
                 <td
@@ -217,7 +236,40 @@ export default function ApplicationsTable({
   );
 }
 
+/**
+ * Invisible, full-bleed link filling its parent <td> (which must be
+ * `relative`). A <tr> can't hold a stretched link directly — browsers strip
+ * anything that isn't a <td>/<th> from a table row — so each cell gets its
+ * own copy instead, giving the whole row one shared destination. Real
+ * interactive elements in a cell (the status <select>, checkbox, Resume and
+ * Edit links) are rendered after this and given `relative` themselves, which
+ * — combined with DOM order — is what keeps them clickable on top of it.
+ *
+ * Exactly one link per row is left as a real, keyboard-reachable control
+ * (via `label`); the rest are `aria-hidden`/untabbable mouse-only
+ * conveniences, since they'd otherwise be many duplicate, unlabeled stops
+ * in the tab order for the same destination.
+ */
+function RowLinkOverlay({ href, label }: { href: string | null; label?: string }) {
+  if (!href) return null;
+
+  return (
+    <a
+      href={href}
+      target="_blank"
+      rel="noopener noreferrer"
+      aria-label={label}
+      aria-hidden={label ? undefined : true}
+      tabIndex={label ? undefined : -1}
+      className="absolute inset-0"
+    />
+  );
+}
+
 function formatDate(value: string | null) {
   if (!value) return "—";
-  return new Date(value).toLocaleDateString();
+  // A pinned locale keeps server and client output identical — omitting it
+  // uses the runtime's default locale, which differs between Node (SSR)
+  // and the browser and causes a hydration mismatch.
+  return new Date(value).toLocaleDateString("en-US");
 }

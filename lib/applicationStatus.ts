@@ -29,7 +29,7 @@ export const STATUS_BADGE_STYLES: Record<ApplicationStatus, string> = {
   Withdrawn: "bg-amber-50 text-amber-700 ring-1 ring-inset ring-amber-600/15",
 };
 
-/** Solid fill colors for the status bar chart (badges above use soft tints instead). */
+/** Solid fill colors for the status bar charts (badges above use soft tints instead). */
 export const STATUS_BAR_COLORS: Record<ApplicationStatus, string> = {
   "Not Applied": "bg-slate-300",
   Applied: "bg-slate-400",
@@ -40,4 +40,10 @@ export const STATUS_BAR_COLORS: Record<ApplicationStatus, string> = {
   Accepted: "bg-green-600",
   Rejected: "bg-red-500",
   Withdrawn: "bg-amber-500",
+};
+
+/** Whole-row tint for statuses that should stand out in the applications table. */
+export const STATUS_ROW_STYLES: Partial<Record<ApplicationStatus, string>> = {
+  Accepted: "bg-green-50 hover:bg-green-100/70",
+  Rejected: "bg-red-50 hover:bg-red-100/70",
 };

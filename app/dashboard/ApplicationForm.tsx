@@ -1,10 +1,33 @@
 "use client";
 
-import { useState, type ChangeEvent, type FormEvent, type ReactNode } from "react";
+import {
+  useEffect,
+  useState,
+  type ChangeEvent,
+  type FormEvent,
+  type ReactNode,
+} from "react";
 import { useRouter } from "next/navigation";
 import { upload } from "@vercel/blob/client";
 import { APPLICATION_STATUSES, type ApplicationStatus } from "@/lib/applicationStatus";
 import { BUTTON_DANGER, BUTTON_PRIMARY, BUTTON_SECONDARY, CARD, INPUT } from "@/lib/ui";
+
+const DEFAULT_FOLLOW_UP_OFFSET_DAYS = 4;
+
+/** Formats a Date using its local calendar fields (not UTC, unlike toISOString). */
+function toLocalISODate(date: Date): string {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
+function addDays(isoDate: string, days: number): string {
+  const [year, month, day] = isoDate.split("-").map(Number);
+  const date = new Date(year, month - 1, day);
+  date.setDate(date.getDate() + days);
+  return toLocalISODate(date);
+}
 
 export interface ApplicationFormValues {
   company: string;
@@ -53,11 +76,51 @@ export default function ApplicationForm({
 
   const isEditing = Boolean(applicationId);
 
+  // Once the user (or an existing record being edited) has set a follow-up
+  // date directly, stop auto-deriving it from Date Applied.
+  const [followUpDateLinked, setFollowUpDateLinked] = useState(!isEditing);
+
+  // Defaulting "today" during render would run once on the server and again
+  // on the client, and a clock/timezone difference between them would cause
+  // a hydration mismatch (see the date-formatting fix in ApplicationsTable
+  // and ApplicationActivity) — so new-application defaults are filled in
+  // after mount instead, client-side only.
+  useEffect(() => {
+    if (isEditing) return;
+    setValues((prev) => {
+      if (prev.dateApplied) return prev;
+      const today = toLocalISODate(new Date());
+      return {
+        ...prev,
+        dateApplied: today,
+        followUpDate: addDays(today, DEFAULT_FOLLOW_UP_OFFSET_DAYS),
+      };
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   function update<K extends keyof ApplicationFormValues>(
     key: K,
     value: ApplicationFormValues[K]
   ) {
     setValues((prev) => ({ ...prev, [key]: value }));
+  }
+
+  function handleDateAppliedChange(next: string) {
+    setValues((prev) => ({
+      ...prev,
+      dateApplied: next,
+      followUpDate: followUpDateLinked
+        ? next
+          ? addDays(next, DEFAULT_FOLLOW_UP_OFFSET_DAYS)
+          : ""
+        : prev.followUpDate,
+    }));
+  }
+
+  function handleFollowUpDateChange(next: string) {
+    setFollowUpDateLinked(false);
+    update("followUpDate", next);
   }
 
   async function handleFileChange(event: ChangeEvent<HTMLInputElement>) {
@@ -169,7 +232,7 @@ export default function ApplicationForm({
           <input
             type="date"
             value={values.dateApplied}
-            onChange={(e) => update("dateApplied", e.target.value)}
+            onChange={(e) => handleDateAppliedChange(e.target.value)}
             className={INPUT}
           />
         </Field>
@@ -243,7 +306,7 @@ export default function ApplicationForm({
           <input
             type="date"
             value={values.followUpDate}
-            onChange={(e) => update("followUpDate", e.target.value)}
+            onChange={(e) => handleFollowUpDateChange(e.target.value)}
             className={INPUT}
           />
         </Field>

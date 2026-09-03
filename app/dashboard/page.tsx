@@ -4,9 +4,8 @@ import { auth, signOut } from "@/auth";
 import dbConnect from "@/lib/mongodb";
 import Application from "@/lib/models/Application";
 import { BUTTON_PRIMARY, BUTTON_SECONDARY } from "@/lib/ui";
-import ApplicationActivity from "./ApplicationActivity";
-import ApplicationsTable, { type ApplicationRecord } from "./ApplicationsTable";
-import StatsSummary from "./StatsSummary";
+import DashboardClient from "./DashboardClient";
+import type { ApplicationRecord } from "./ApplicationsTable";
 
 export default async function DashboardPage() {
   const session = await auth();
@@ -25,6 +24,7 @@ export default async function DashboardPage() {
     status: doc.status,
     resumeVersionLabel: doc.resumeVersionLabel ?? null,
     resumeUrl: doc.resumeUrl ?? null,
+    jobPostingUrl: doc.jobPostingUrl ?? null,
     followUpDate: doc.followUpDate ? doc.followUpDate.toISOString() : null,
     followUpDone: Boolean(doc.followUpDone),
     notes: doc.notes ?? null,
@@ -72,11 +72,7 @@ export default async function DashboardPage() {
           </Link>
         </div>
       ) : (
-        <>
-          <StatsSummary applications={applications} />
-          <ApplicationActivity applications={applications} />
-          <ApplicationsTable applications={applications} />
-        </>
+        <DashboardClient initialApplications={applications} />
       )}
     </main>
   );

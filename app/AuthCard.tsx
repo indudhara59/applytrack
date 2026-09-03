@@ -1,3 +1,4 @@
+import Link from "next/link";
 import type { ReactNode } from "react";
 
 export default function AuthCard({
@@ -11,6 +12,27 @@ export default function AuthCard({
 }) {
   return (
     <main className="bg-dot-grid relative flex min-h-screen flex-col items-center justify-center gap-8 overflow-hidden p-6">
+      <Link
+        href="/"
+        className="absolute left-4 top-4 z-10 flex items-center gap-1.5 text-sm font-medium text-slate-500 hover:text-slate-900 sm:left-6 sm:top-6"
+      >
+        <svg
+          viewBox="0 0 24 24"
+          fill="none"
+          className="h-4 w-4"
+          aria-hidden="true"
+        >
+          <path
+            stroke="currentColor"
+            strokeWidth="1.75"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            d="M15 19l-7-7 7-7"
+          />
+        </svg>
+        Back to home
+      </Link>
+
       <div
         aria-hidden="true"
         className="absolute -left-24 -top-24 h-72 w-72 rounded-full bg-indigo-300/40 blur-3xl"
