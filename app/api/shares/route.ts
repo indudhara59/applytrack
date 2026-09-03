@@ -1,7 +1,7 @@
 import { ObjectId } from "mongodb";
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/auth";
-import dbConnect, { clientPromise } from "@/lib/mongodb";
+import dbConnect, { getMongoClient } from "@/lib/mongodb";
 import SharedJob from "@/lib/models/SharedJob";
 import { normalizeUsername } from "@/lib/username";
 
@@ -25,7 +25,7 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  const client = await clientPromise;
+  const client = await getMongoClient();
   const users = client.db().collection("users");
 
   const recipient = await users.findOne({ username: toUsername });

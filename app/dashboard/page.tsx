@@ -2,7 +2,7 @@ import { ObjectId } from "mongodb";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { auth, signOut } from "@/auth";
-import dbConnect, { clientPromise } from "@/lib/mongodb";
+import dbConnect, { getMongoClient } from "@/lib/mongodb";
 import Application from "@/lib/models/Application";
 import SharedJob from "@/lib/models/SharedJob";
 import { BUTTON_PRIMARY, BUTTON_SECONDARY } from "@/lib/ui";
@@ -14,7 +14,7 @@ export default async function DashboardPage() {
   const session = await auth();
   if (!session?.user?.id) redirect("/login");
 
-  const client = await clientPromise;
+  const client = await getMongoClient();
   const userDoc = await client
     .db()
     .collection("users")

@@ -2,7 +2,7 @@
 
 import { AuthError } from "next-auth";
 import { signIn } from "@/auth";
-import { clientPromise } from "@/lib/mongodb";
+import { getMongoClient } from "@/lib/mongodb";
 import { hashPassword } from "@/lib/password";
 import { normalizeUsername, USERNAME_HELP_TEXT, USERNAME_PATTERN } from "@/lib/username";
 
@@ -32,7 +32,7 @@ export async function signUpWithCredentials(
     return "Passwords don't match.";
   }
 
-  const client = await clientPromise;
+  const client = await getMongoClient();
   const users = client.db().collection("users");
 
   const existingEmail = await users.findOne({ email });

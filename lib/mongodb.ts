@@ -20,21 +20,42 @@ declare global {
   var _mongooseConnectionPromise: Promise<typeof mongoose> | undefined;
 }
 
-function getClientPromise(): Promise<MongoClient> {
+/**
+ * Returns the cached MongoClient connection. If a previous attempt failed,
+ * the cache is cleared so the next call retries a fresh connection instead
+ * of staying stuck on the same rejected promise for the rest of a warm
+ * serverless container's lifetime.
+ */
+export function getMongoClient(): Promise<MongoClient> {
   if (!global._mongoClientPromise) {
     const client = new MongoClient(uri as string);
-    global._mongoClientPromise = client.connect();
+    global._mongoClientPromise = client.connect().catch((error) => {
+      global._mongoClientPromise = undefined;
+      throw error;
+    });
   }
   return global._mongoClientPromise;
 }
 
-/** Raw MongoClient promise, required by @auth/mongodb-adapter. */
-export const clientPromise = getClientPromise();
+/**
+ * Raw MongoClient promise, required by @auth/mongodb-adapter (its API takes
+ * a Promise value, not a getter, so this snapshot is taken once at module
+ * load — same retry caveat as any single call to getMongoClient()). Use
+ * getMongoClient() instead everywhere else, since a fresh call re-checks
+ * the cache and can recover from a prior failure.
+ */
+export const clientPromise = getMongoClient();
 
-/** Cached Mongoose connection helper for use in app data models/routes. */
+/**
+ * Cached Mongoose connection helper for use in app data models/routes. Same
+ * retry-on-failure behavior as getMongoClient() above.
+ */
 export async function dbConnect(): Promise<typeof mongoose> {
   if (!global._mongooseConnectionPromise) {
-    global._mongooseConnectionPromise = mongoose.connect(uri as string);
+    global._mongooseConnectionPromise = mongoose.connect(uri as string).catch((error) => {
+      global._mongooseConnectionPromise = undefined;
+      throw error;
+    });
   }
   return global._mongooseConnectionPromise;
 }

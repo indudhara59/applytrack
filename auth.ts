@@ -2,7 +2,7 @@ import NextAuth from "next-auth";
 import Google from "next-auth/providers/google";
 import Credentials from "next-auth/providers/credentials";
 import { MongoDBAdapter } from "@auth/mongodb-adapter";
-import { clientPromise } from "@/lib/mongodb";
+import { clientPromise, getMongoClient } from "@/lib/mongodb";
 import { verifyPassword } from "@/lib/password";
 import { authConfig } from "@/auth.config";
 
@@ -30,7 +30,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
             : null;
         if (!email || !password) return null;
 
-        const client = await clientPromise;
+        const client = await getMongoClient();
         const user = await client
           .db()
           .collection("users")

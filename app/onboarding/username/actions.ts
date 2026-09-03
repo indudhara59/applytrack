@@ -3,7 +3,7 @@
 import { ObjectId } from "mongodb";
 import { redirect } from "next/navigation";
 import { auth } from "@/auth";
-import { clientPromise } from "@/lib/mongodb";
+import { getMongoClient } from "@/lib/mongodb";
 import { normalizeUsername, USERNAME_HELP_TEXT, USERNAME_PATTERN } from "@/lib/username";
 
 export async function setUsername(
@@ -17,7 +17,7 @@ export async function setUsername(
     return USERNAME_HELP_TEXT;
   }
 
-  const client = await clientPromise;
+  const client = await getMongoClient();
   const users = client.db().collection("users");
 
   const existing = await users.findOne({ username });
