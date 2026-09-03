@@ -7,6 +7,7 @@ import {
   STATUS_BADGE_STYLES,
   type ApplicationStatus,
 } from "@/lib/applicationStatus";
+import { CARD } from "@/lib/ui";
 
 export interface ApplicationRecord {
   _id: string;
@@ -75,7 +76,7 @@ export default function ApplicationsTable({
       <div className="mb-4 flex items-center gap-3">
         <label
           htmlFor="status-filter"
-          className="text-sm font-medium text-gray-700"
+          className="text-sm font-medium text-slate-700"
         >
           Filter by status
         </label>
@@ -85,7 +86,7 @@ export default function ApplicationsTable({
           onChange={(e) =>
             setStatusFilter(e.target.value as ApplicationStatus | "All")
           }
-          className="rounded-md border border-gray-300 px-3 py-1.5 text-sm"
+          className="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-sm text-slate-700 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/20"
         >
           <option value="All">All</option>
           {APPLICATION_STATUSES.map((status) => (
@@ -96,53 +97,58 @@ export default function ApplicationsTable({
         </select>
       </div>
 
-      <div className="overflow-x-auto rounded-lg border border-gray-200">
-        <table className="min-w-full divide-y divide-gray-200 text-sm">
-          <thead className="bg-gray-50">
+      <div className={`${CARD} overflow-x-auto`}>
+        <table className="min-w-full divide-y divide-slate-200 text-sm">
+          <thead className="bg-slate-50">
             <tr>
-              <th className="px-4 py-3 text-left font-medium text-gray-500">
+              <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">
                 Company
               </th>
-              <th className="px-4 py-3 text-left font-medium text-gray-500">
+              <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">
                 Role
               </th>
-              <th className="px-4 py-3 text-left font-medium text-gray-500">
+              <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">
                 <button
                   type="button"
                   onClick={() =>
                     setSortDirection((d) => (d === "asc" ? "desc" : "asc"))
                   }
-                  className="flex items-center gap-1"
+                  className="flex items-center gap-1 hover:text-slate-700"
                 >
                   Date Applied {sortDirection === "asc" ? "↑" : "↓"}
                 </button>
               </th>
-              <th className="px-4 py-3 text-left font-medium text-gray-500">
+              <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">
                 Status
               </th>
-              <th className="px-4 py-3 text-left font-medium text-gray-500">
+              <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">
                 Resume
               </th>
-              <th className="px-4 py-3 text-left font-medium text-gray-500">
+              <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">
                 Follow-up Date
               </th>
-              <th className="px-4 py-3 text-left font-medium text-gray-500">
+              <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">
                 Follow-up Done
               </th>
-              <th className="px-4 py-3 text-left font-medium text-gray-500">
+              <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">
                 Notes
               </th>
-              <th className="px-4 py-3 text-left font-medium text-gray-500" />
+              <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-500" />
             </tr>
           </thead>
-          <tbody className="divide-y divide-gray-100 bg-white">
+          <tbody className="divide-y divide-slate-100 bg-white">
             {visible.map((application) => (
-              <tr key={application._id}>
-                <td className="px-4 py-3 font-medium text-gray-900">
+              <tr
+                key={application._id}
+                className="transition-colors hover:bg-slate-50"
+              >
+                <td className="px-4 py-3 font-medium text-slate-900">
                   {application.company}
                 </td>
-                <td className="px-4 py-3">{application.role}</td>
-                <td className="px-4 py-3">
+                <td className="px-4 py-3 text-slate-700">
+                  {application.role}
+                </td>
+                <td className="px-4 py-3 text-slate-700">
                   {formatDate(application.dateApplied)}
                 </td>
                 <td className="px-4 py-3">
@@ -158,15 +164,15 @@ export default function ApplicationsTable({
                       href={application.resumeUrl}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="font-medium text-blue-600 hover:underline"
+                      className="font-medium text-indigo-600 hover:text-indigo-500 hover:underline"
                     >
                       {application.resumeVersionLabel || "Resume"}
                     </a>
                   ) : (
-                    <span className="text-gray-400">—</span>
+                    <span className="text-slate-400">—</span>
                   )}
                 </td>
-                <td className="px-4 py-3">
+                <td className="px-4 py-3 text-slate-700">
                   {formatDate(application.followUpDate)}
                 </td>
                 <td className="px-4 py-3">
@@ -177,17 +183,17 @@ export default function ApplicationsTable({
                     onChange={(e) =>
                       toggleFollowUpDone(application._id, e.target.checked)
                     }
-                    className="h-4 w-4 rounded border-gray-300"
+                    className="h-4 w-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500/40"
                     aria-label={`Follow-up done for ${application.company}`}
                   />
                 </td>
-                <td className="max-w-xs truncate px-4 py-3 text-gray-500">
+                <td className="max-w-xs truncate px-4 py-3 text-slate-500">
                   {application.notes}
                 </td>
                 <td className="whitespace-nowrap px-4 py-3 text-right">
                   <Link
                     href={`/dashboard/${application._id}/edit`}
-                    className="text-sm font-medium text-blue-600 hover:underline"
+                    className="text-sm font-medium text-indigo-600 hover:text-indigo-500 hover:underline"
                   >
                     Edit
                   </Link>
@@ -198,7 +204,7 @@ export default function ApplicationsTable({
               <tr>
                 <td
                   colSpan={9}
-                  className="px-4 py-8 text-center text-gray-400"
+                  className="px-4 py-8 text-center text-slate-400"
                 >
                   No applications match this filter.
                 </td>

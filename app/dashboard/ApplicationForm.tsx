@@ -4,6 +4,7 @@ import { useState, type ChangeEvent, type FormEvent, type ReactNode } from "reac
 import { useRouter } from "next/navigation";
 import { upload } from "@vercel/blob/client";
 import { APPLICATION_STATUSES, type ApplicationStatus } from "@/lib/applicationStatus";
+import { BUTTON_DANGER, BUTTON_PRIMARY, BUTTON_SECONDARY, CARD, INPUT } from "@/lib/ui";
 
 export interface ApplicationFormValues {
   company: string;
@@ -135,9 +136,12 @@ export default function ApplicationForm({
   }
 
   return (
-    <form onSubmit={handleSubmit} className="flex flex-col gap-5">
+    <form
+      onSubmit={handleSubmit}
+      className={`${CARD} flex flex-col gap-5 p-5 sm:p-6`}
+    >
       {error && (
-        <p className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">
+        <p className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700 ring-1 ring-inset ring-red-600/15">
           {error}
         </p>
       )}
@@ -148,7 +152,7 @@ export default function ApplicationForm({
             required
             value={values.company}
             onChange={(e) => update("company", e.target.value)}
-            className={inputClass}
+            className={INPUT}
           />
         </Field>
 
@@ -157,7 +161,7 @@ export default function ApplicationForm({
             required
             value={values.role}
             onChange={(e) => update("role", e.target.value)}
-            className={inputClass}
+            className={INPUT}
           />
         </Field>
 
@@ -166,7 +170,7 @@ export default function ApplicationForm({
             type="date"
             value={values.dateApplied}
             onChange={(e) => update("dateApplied", e.target.value)}
-            className={inputClass}
+            className={INPUT}
           />
         </Field>
 
@@ -174,7 +178,7 @@ export default function ApplicationForm({
           <select
             value={values.status}
             onChange={(e) => update("status", e.target.value as ApplicationStatus)}
-            className={inputClass}
+            className={INPUT}
           >
             {APPLICATION_STATUSES.map((status) => (
               <option key={status} value={status}>
@@ -189,11 +193,11 @@ export default function ApplicationForm({
             value={values.resumeVersionLabel}
             onChange={(e) => update("resumeVersionLabel", e.target.value)}
             placeholder="Resume_Google_PM.pdf"
-            className={inputClass}
+            className={INPUT}
           />
         </Field>
 
-        <div className="flex flex-col gap-1 text-sm font-medium text-gray-700">
+        <div className="flex flex-col gap-1 text-sm font-medium text-slate-700">
           <label htmlFor="resume-file">Resume File</label>
           <input
             id="resume-file"
@@ -201,15 +205,17 @@ export default function ApplicationForm({
             accept=".pdf,.doc,.docx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
             onChange={handleFileChange}
             disabled={uploading}
-            className="text-sm text-gray-700 file:mr-3 file:rounded-md file:border file:border-gray-300 file:bg-white file:px-3 file:py-1.5 file:text-sm file:font-medium file:text-gray-700 hover:file:bg-gray-50 disabled:opacity-50"
+            className="text-sm text-slate-600 file:mr-3 file:rounded-lg file:border file:border-slate-300 file:bg-white file:px-3 file:py-1.5 file:text-sm file:font-medium file:text-slate-700 hover:file:bg-slate-50 disabled:opacity-50"
           />
-          {uploading && <p className="text-xs font-normal text-gray-500">Uploading…</p>}
+          {uploading && (
+            <p className="text-xs font-normal text-slate-500">Uploading…</p>
+          )}
           {!uploading && values.resumeUrl && (
             <a
               href={values.resumeUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="w-fit text-xs font-normal text-blue-600 hover:underline"
+              className="w-fit text-xs font-normal text-indigo-600 hover:underline"
             >
               View uploaded resume
             </a>
@@ -221,7 +227,7 @@ export default function ApplicationForm({
             type="url"
             value={values.jobPostingUrl}
             onChange={(e) => update("jobPostingUrl", e.target.value)}
-            className={inputClass}
+            className={INPUT}
           />
         </Field>
 
@@ -229,7 +235,7 @@ export default function ApplicationForm({
           <input
             value={values.contact}
             onChange={(e) => update("contact", e.target.value)}
-            className={inputClass}
+            className={INPUT}
           />
         </Field>
 
@@ -238,16 +244,16 @@ export default function ApplicationForm({
             type="date"
             value={values.followUpDate}
             onChange={(e) => update("followUpDate", e.target.value)}
-            className={inputClass}
+            className={INPUT}
           />
         </Field>
 
-        <label className="flex items-center gap-2 text-sm text-gray-700">
+        <label className="flex items-center gap-2 self-end pb-2 text-sm text-slate-700">
           <input
             type="checkbox"
             checked={values.followUpDone}
             onChange={(e) => update("followUpDone", e.target.checked)}
-            className="h-4 w-4 rounded border-gray-300"
+            className="h-4 w-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500/40"
           />
           Follow-up done
         </label>
@@ -258,16 +264,16 @@ export default function ApplicationForm({
           value={values.notes}
           onChange={(e) => update("notes", e.target.value)}
           rows={4}
-          className={inputClass}
+          className={INPUT}
         />
       </Field>
 
-      <div className="flex flex-wrap items-center justify-between gap-3 pt-2">
+      <div className="flex flex-wrap items-center justify-between gap-3 border-t border-slate-100 pt-5">
         <div className="flex flex-wrap gap-3">
           <button
             type="submit"
             disabled={submitting || deleting || uploading}
-            className="rounded-md bg-gray-900 px-4 py-2 text-sm font-medium text-white hover:bg-gray-700 disabled:opacity-50"
+            className={BUTTON_PRIMARY}
           >
             {submitting
               ? "Saving…"
@@ -278,7 +284,7 @@ export default function ApplicationForm({
           <button
             type="button"
             onClick={() => router.push("/dashboard")}
-            className="rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+            className={BUTTON_SECONDARY}
           >
             Cancel
           </button>
@@ -289,7 +295,7 @@ export default function ApplicationForm({
             type="button"
             onClick={handleDelete}
             disabled={submitting || deleting || uploading}
-            className="rounded-md border border-red-200 px-4 py-2 text-sm font-medium text-red-600 hover:bg-red-50 disabled:opacity-50"
+            className={BUTTON_DANGER}
           >
             {deleting ? "Deleting…" : "Delete"}
           </button>
@@ -301,12 +307,9 @@ export default function ApplicationForm({
 
 function Field({ label, children }: { label: string; children: ReactNode }) {
   return (
-    <label className="flex flex-col gap-1 text-sm font-medium text-gray-700">
+    <label className="flex flex-col gap-1 text-sm font-medium text-slate-700">
       {label}
       {children}
     </label>
   );
 }
-
-const inputClass =
-  "rounded-md border border-gray-300 px-3 py-2 text-sm font-normal text-gray-900 focus:border-gray-500 focus:outline-none";

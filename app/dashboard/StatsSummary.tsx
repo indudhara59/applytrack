@@ -3,6 +3,7 @@ import {
   STATUS_PLURAL_LABELS,
   type ApplicationStatus,
 } from "@/lib/applicationStatus";
+import { CARD } from "@/lib/ui";
 import type { ApplicationRecord } from "./ApplicationsTable";
 
 const UPCOMING_WINDOW_DAYS = 7;
@@ -41,9 +42,9 @@ export default function StatsSummary({
   return (
     <div className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-3">
       <StatCard label="Total Applications" value={applications.length} />
-      <div className="rounded-lg border border-gray-200 bg-white p-4">
-        <p className="text-sm font-medium text-gray-500">By Status</p>
-        <p className="mt-1 text-sm text-gray-900">{statusSummary || "—"}</p>
+      <div className={`${CARD} p-4`}>
+        <p className="text-sm font-medium text-slate-500">By Status</p>
+        <p className="mt-1 text-sm text-slate-900">{statusSummary || "—"}</p>
       </div>
       <StatCard
         label={`Follow-ups Due (${UPCOMING_WINDOW_DAYS} days)`}
@@ -64,10 +65,10 @@ function StatCard({
   accent?: boolean;
 }) {
   return (
-    <div className="rounded-lg border border-gray-200 bg-white p-4">
-      <p className="text-sm font-medium text-gray-500">{label}</p>
+    <div className={`${CARD} p-4`}>
+      <p className="text-sm font-medium text-slate-500">{label}</p>
       <p
-        className={`mt-1 text-2xl font-semibold ${accent ? "text-amber-600" : "text-gray-900"}`}
+        className={`mt-1 text-2xl font-semibold ${accent ? "text-amber-600" : "text-slate-900"}`}
       >
         {value}
       </p>

@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { auth, signOut } from "@/auth";
 import dbConnect from "@/lib/mongodb";
 import Application from "@/lib/models/Application";
+import { BUTTON_PRIMARY, BUTTON_SECONDARY } from "@/lib/ui";
 import ApplicationsTable, { type ApplicationRecord } from "./ApplicationsTable";
 import StatsSummary from "./StatsSummary";
 
@@ -34,14 +35,13 @@ export default async function DashboardPage() {
     <main className="mx-auto max-w-6xl p-4 sm:p-8">
       <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-semibold">Welcome, {displayName}</h1>
-          <p className="text-sm text-gray-500">Your job applications</p>
+          <h1 className="text-2xl font-semibold text-slate-900">
+            Welcome, {displayName}
+          </h1>
+          <p className="text-sm text-slate-500">Your job applications</p>
         </div>
         <div className="flex flex-wrap items-center gap-3">
-          <Link
-            href="/dashboard/new"
-            className="rounded-md bg-gray-900 px-4 py-2 text-sm font-medium text-white hover:bg-gray-700"
-          >
+          <Link href="/dashboard/new" className={BUTTON_PRIMARY}>
             Add Application
           </Link>
           <form
@@ -50,10 +50,7 @@ export default async function DashboardPage() {
               await signOut({ redirectTo: "/login" });
             }}
           >
-            <button
-              type="submit"
-              className="rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50"
-            >
+            <button type="submit" className={BUTTON_SECONDARY}>
               Sign out
             </button>
           </form>
@@ -61,18 +58,15 @@ export default async function DashboardPage() {
       </div>
 
       {applications.length === 0 ? (
-        <div className="flex flex-col items-center gap-3 rounded-lg border border-dashed border-gray-300 bg-white px-6 py-16 text-center">
-          <p className="text-lg font-medium text-gray-900">
+        <div className="flex flex-col items-center gap-3 rounded-xl border border-dashed border-slate-300 bg-white px-6 py-16 text-center">
+          <p className="text-lg font-medium text-slate-900">
             No applications yet
           </p>
-          <p className="max-w-sm text-sm text-gray-500">
+          <p className="max-w-sm text-sm text-slate-500">
             Track every job you apply to in one place — company, status,
             resume version, and follow-ups.
           </p>
-          <Link
-            href="/dashboard/new"
-            className="mt-2 rounded-md bg-gray-900 px-4 py-2 text-sm font-medium text-white hover:bg-gray-700"
-          >
+          <Link href="/dashboard/new" className={`mt-2 ${BUTTON_PRIMARY}`}>
             Add your first application
           </Link>
         </div>
