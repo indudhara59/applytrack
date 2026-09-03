@@ -3,6 +3,7 @@
 import { useState } from "react";
 import ApplicationActivity from "./ApplicationActivity";
 import ApplicationsTable, { type ApplicationRecord } from "./ApplicationsTable";
+import ShareModal from "./ShareModal";
 import StatsSummary from "./StatsSummary";
 
 type MutablePatch = Partial<Pick<ApplicationRecord, "status" | "followUpDone">>;
@@ -14,6 +15,9 @@ export default function DashboardClient({
 }) {
   const [applications, setApplications] = useState(initialApplications);
   const [pendingId, setPendingId] = useState<string | null>(null);
+  const [shareTarget, setShareTarget] = useState<ApplicationRecord | null>(
+    null
+  );
 
   async function updateApplication(id: string, patch: MutablePatch) {
     const previous = applications.find((a) => a._id === id);
@@ -53,6 +57,11 @@ export default function DashboardClient({
         onToggleFollowUpDone={(id, next) =>
           updateApplication(id, { followUpDone: next })
         }
+        onShare={setShareTarget}
+      />
+      <ShareModal
+        application={shareTarget}
+        onClose={() => setShareTarget(null)}
       />
     </>
   );

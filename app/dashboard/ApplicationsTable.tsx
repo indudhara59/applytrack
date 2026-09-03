@@ -31,11 +31,13 @@ export default function ApplicationsTable({
   pendingId,
   onStatusChange,
   onToggleFollowUpDone,
+  onShare,
 }: {
   applications: ApplicationRecord[];
   pendingId: string | null;
   onStatusChange: (id: string, status: ApplicationStatus) => void;
   onToggleFollowUpDone: (id: string, next: boolean) => void;
+  onShare: (application: ApplicationRecord) => void;
 }) {
   const [statusFilter, setStatusFilter] = useState<ApplicationStatus | "All">(
     "All"
@@ -209,12 +211,23 @@ export default function ApplicationsTable({
                   </td>
                   <td className="relative whitespace-nowrap px-4 py-3 text-right">
                     <RowLinkOverlay href={jobUrl} />
-                    <Link
-                      href={`/dashboard/${application._id}/edit`}
-                      className="relative text-sm font-medium text-indigo-600 hover:text-indigo-500 hover:underline"
-                    >
-                      Edit
-                    </Link>
+                    <div className="relative flex justify-end gap-3">
+                      {jobUrl && (
+                        <button
+                          type="button"
+                          onClick={() => onShare(application)}
+                          className="text-sm font-medium text-indigo-600 hover:text-indigo-500 hover:underline"
+                        >
+                          Share
+                        </button>
+                      )}
+                      <Link
+                        href={`/dashboard/${application._id}/edit`}
+                        className="text-sm font-medium text-indigo-600 hover:text-indigo-500 hover:underline"
+                      >
+                        Edit
+                      </Link>
+                    </div>
                   </td>
                 </tr>
               );

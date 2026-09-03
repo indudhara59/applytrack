@@ -41,6 +41,16 @@ export default function SignupForm() {
         className={INPUT}
       />
       <input
+        name="username"
+        type="text"
+        required
+        autoComplete="username"
+        placeholder="Username (e.g. jane_doe)"
+        pattern="[a-z0-9_]{3,20}"
+        title="3-20 characters: lowercase letters, numbers, and underscores"
+        className={INPUT}
+      />
+      <input
         name="password"
         type="password"
         required
