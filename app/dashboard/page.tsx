@@ -90,22 +90,7 @@ export default async function DashboardPage() {
 
       <SharedWithYou shares={shares} />
 
-      {applications.length === 0 ? (
-        <div className="flex flex-col items-center gap-3 rounded-xl border border-dashed border-slate-300 bg-white px-6 py-16 text-center">
-          <p className="text-lg font-medium text-slate-900">
-            No applications yet
-          </p>
-          <p className="max-w-sm text-sm text-slate-500">
-            Track every job you apply to in one place — company, status,
-            resume version, and follow-ups.
-          </p>
-          <Link href="/dashboard/new" className={`mt-2 ${BUTTON_PRIMARY}`}>
-            Add your first application
-          </Link>
-        </div>
-      ) : (
-        <DashboardClient initialApplications={applications} />
-      )}
+      <DashboardClient initialApplications={applications} />
     </main>
   );
 }

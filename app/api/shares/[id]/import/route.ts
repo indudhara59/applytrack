@@ -34,6 +34,11 @@ export async function POST(
     role: share.role,
     jobPostingUrl: share.jobPostingUrl,
     status: "Not Applied",
+    // Without a date, this would silently never show up in the "by date"
+    // chart or the calendar (both group by dateApplied and skip anything
+    // missing one) — the day it's added to the tracker is as good a date
+    // as any, same as the "new application" form defaulting to today.
+    dateApplied: new Date(),
   });
 
   await SharedJob.deleteOne({ _id: share._id });
