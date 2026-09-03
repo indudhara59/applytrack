@@ -4,6 +4,7 @@ const APPLICATION_FIELDS = [
   "dateApplied",
   "status",
   "resumeVersionLabel",
+  "resumeUrl",
   "jobPostingUrl",
   "contact",
   "followUpDate",

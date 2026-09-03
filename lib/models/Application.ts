@@ -13,6 +13,7 @@ const applicationSchema = new Schema(
       default: "Applied",
     },
     resumeVersionLabel: { type: String },
+    resumeUrl: { type: String },
     jobPostingUrl: { type: String },
     contact: { type: String },
     followUpDate: { type: Date },

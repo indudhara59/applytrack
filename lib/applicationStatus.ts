@@ -24,3 +24,14 @@ export const STATUS_BADGE_STYLES: Record<ApplicationStatus, string> = {
   Rejected: "bg-red-100 text-red-700",
   Withdrawn: "bg-yellow-100 text-yellow-700",
 };
+
+/** Plural form for counts != 1 in the dashboard stats summary. */
+export const STATUS_PLURAL_LABELS: Record<ApplicationStatus, string> = {
+  "Not Applied": "Not Applied",
+  Applied: "Applied",
+  "Phone Screen": "Phone Screens",
+  Interview: "Interviews",
+  Offer: "Offers",
+  Rejected: "Rejected",
+  Withdrawn: "Withdrawn",
+};

@@ -1,7 +1,8 @@
 "use client";
 
-import { useState, type FormEvent, type ReactNode } from "react";
+import { useState, type ChangeEvent, type FormEvent, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
+import { upload } from "@vercel/blob/client";
 import { APPLICATION_STATUSES, type ApplicationStatus } from "@/lib/applicationStatus";
 
 export interface ApplicationFormValues {
@@ -10,6 +11,7 @@ export interface ApplicationFormValues {
   dateApplied: string;
   status: ApplicationStatus;
   resumeVersionLabel: string;
+  resumeUrl: string;
   jobPostingUrl: string;
   contact: string;
   followUpDate: string;
@@ -23,6 +25,7 @@ const EMPTY_VALUES: ApplicationFormValues = {
   dateApplied: "",
   status: "Applied",
   resumeVersionLabel: "",
+  resumeUrl: "",
   jobPostingUrl: "",
   contact: "",
   followUpDate: "",
@@ -44,6 +47,7 @@ export default function ApplicationForm({
   });
   const [submitting, setSubmitting] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [uploading, setUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const isEditing = Boolean(applicationId);
@@ -53,6 +57,30 @@ export default function ApplicationForm({
     value: ApplicationFormValues[K]
   ) {
     setValues((prev) => ({ ...prev, [key]: value }));
+  }
+
+  async function handleFileChange(event: ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0];
+    event.target.value = "";
+    if (!file) return;
+
+    setUploading(true);
+    setError(null);
+
+    try {
+      const blob = await upload(file.name, file, {
+        access: "public",
+        handleUploadUrl: "/api/upload",
+      });
+      update("resumeUrl", blob.url);
+      if (!values.resumeVersionLabel) {
+        update("resumeVersionLabel", file.name);
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Resume upload failed");
+    } finally {
+      setUploading(false);
+    }
   }
 
   async function handleSubmit(event: FormEvent) {
@@ -165,6 +193,29 @@ export default function ApplicationForm({
           />
         </Field>
 
+        <div className="flex flex-col gap-1 text-sm font-medium text-gray-700">
+          <label htmlFor="resume-file">Resume File</label>
+          <input
+            id="resume-file"
+            type="file"
+            accept=".pdf,.doc,.docx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+            onChange={handleFileChange}
+            disabled={uploading}
+            className="text-sm text-gray-700 file:mr-3 file:rounded-md file:border file:border-gray-300 file:bg-white file:px-3 file:py-1.5 file:text-sm file:font-medium file:text-gray-700 hover:file:bg-gray-50 disabled:opacity-50"
+          />
+          {uploading && <p className="text-xs font-normal text-gray-500">Uploading…</p>}
+          {!uploading && values.resumeUrl && (
+            <a
+              href={values.resumeUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="w-fit text-xs font-normal text-blue-600 hover:underline"
+            >
+              View uploaded resume
+            </a>
+          )}
+        </div>
+
         <Field label="Job Posting URL">
           <input
             type="url"
@@ -211,14 +262,18 @@ export default function ApplicationForm({
         />
       </Field>
 
-      <div className="flex items-center justify-between pt-2">
-        <div className="flex gap-3">
+      <div className="flex flex-wrap items-center justify-between gap-3 pt-2">
+        <div className="flex flex-wrap gap-3">
           <button
             type="submit"
-            disabled={submitting || deleting}
+            disabled={submitting || deleting || uploading}
             className="rounded-md bg-gray-900 px-4 py-2 text-sm font-medium text-white hover:bg-gray-700 disabled:opacity-50"
           >
-            {isEditing ? "Save changes" : "Add Application"}
+            {submitting
+              ? "Saving…"
+              : isEditing
+                ? "Save changes"
+                : "Add Application"}
           </button>
           <button
             type="button"
@@ -233,10 +288,10 @@ export default function ApplicationForm({
           <button
             type="button"
             onClick={handleDelete}
-            disabled={submitting || deleting}
+            disabled={submitting || deleting || uploading}
             className="rounded-md border border-red-200 px-4 py-2 text-sm font-medium text-red-600 hover:bg-red-50 disabled:opacity-50"
           >
-            Delete
+            {deleting ? "Deleting…" : "Delete"}
           </button>
         )}
       </div>

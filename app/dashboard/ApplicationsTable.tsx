@@ -14,6 +14,8 @@ export interface ApplicationRecord {
   role: string;
   dateApplied: string | null;
   status: ApplicationStatus;
+  resumeVersionLabel: string | null;
+  resumeUrl: string | null;
   followUpDate: string | null;
   followUpDone: boolean;
   notes: string | null;
@@ -119,6 +121,9 @@ export default function ApplicationsTable({
                 Status
               </th>
               <th className="px-4 py-3 text-left font-medium text-gray-500">
+                Resume
+              </th>
+              <th className="px-4 py-3 text-left font-medium text-gray-500">
                 Follow-up Date
               </th>
               <th className="px-4 py-3 text-left font-medium text-gray-500">
@@ -146,6 +151,20 @@ export default function ApplicationsTable({
                   >
                     {application.status}
                   </span>
+                </td>
+                <td className="px-4 py-3">
+                  {application.resumeUrl ? (
+                    <a
+                      href={application.resumeUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="font-medium text-blue-600 hover:underline"
+                    >
+                      {application.resumeVersionLabel || "Resume"}
+                    </a>
+                  ) : (
+                    <span className="text-gray-400">—</span>
+                  )}
                 </td>
                 <td className="px-4 py-3">
                   {formatDate(application.followUpDate)}
@@ -178,10 +197,10 @@ export default function ApplicationsTable({
             {visible.length === 0 && (
               <tr>
                 <td
-                  colSpan={8}
+                  colSpan={9}
                   className="px-4 py-8 text-center text-gray-400"
                 >
-                  No applications yet.
+                  No applications match this filter.
                 </td>
               </tr>
             )}

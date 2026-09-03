@@ -24,7 +24,7 @@ export default async function EditApplicationPage({
   if (!doc) notFound();
 
   return (
-    <main className="mx-auto max-w-2xl p-6 sm:p-8">
+    <main className="mx-auto max-w-2xl p-4 sm:p-8">
       <h1 className="mb-6 text-2xl font-semibold">Edit Application</h1>
       <ApplicationForm
         applicationId={params.id}
@@ -34,6 +34,7 @@ export default async function EditApplicationPage({
           dateApplied: toDateInputValue(doc.dateApplied),
           status: doc.status,
           resumeVersionLabel: doc.resumeVersionLabel ?? "",
+          resumeUrl: doc.resumeUrl ?? "",
           jobPostingUrl: doc.jobPostingUrl ?? "",
           contact: doc.contact ?? "",
           followUpDate: toDateInputValue(doc.followUpDate),
