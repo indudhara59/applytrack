@@ -1,7 +1,3 @@
-"use client";
-
-import { useState } from "react";
-import { useRouter } from "next/navigation";
 import { BUTTON_PRIMARY, BUTTON_SECONDARY, CARD } from "@/lib/ui";
 
 export interface SharedJobRecord {
@@ -14,58 +10,23 @@ export interface SharedJobRecord {
 }
 
 export default function SharedWithYou({
-  shares: initialShares,
+  shares,
+  busyId,
+  onImport,
+  onDismiss,
 }: {
   shares: SharedJobRecord[];
+  busyId: string | null;
+  onImport: (id: string) => void;
+  onDismiss: (id: string) => void;
 }) {
-  const router = useRouter();
-  const [shares, setShares] = useState(initialShares);
-  const [busyId, setBusyId] = useState<string | null>(null);
-  const [error, setError] = useState<string | null>(null);
-
   if (shares.length === 0) return null;
-
-  async function handleImport(id: string) {
-    setBusyId(id);
-    setError(null);
-    try {
-      const res = await fetch(`/api/shares/${id}/import`, {
-        method: "POST",
-      });
-      if (!res.ok) throw new Error("Failed to add this application");
-      setShares((prev) => prev.filter((s) => s._id !== id));
-      router.refresh();
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Something went wrong");
-    } finally {
-      setBusyId(null);
-    }
-  }
-
-  async function handleDismiss(id: string) {
-    setBusyId(id);
-    setError(null);
-    try {
-      const res = await fetch(`/api/shares/${id}`, { method: "DELETE" });
-      if (!res.ok) throw new Error("Failed to dismiss");
-      setShares((prev) => prev.filter((s) => s._id !== id));
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Something went wrong");
-    } finally {
-      setBusyId(null);
-    }
-  }
 
   return (
     <div className={`${CARD} mb-6 p-5`}>
       <p className="mb-3 text-sm font-medium text-slate-500">
         Shared with you
       </p>
-      {error && (
-        <p className="mb-3 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700 ring-1 ring-inset ring-red-600/15">
-          {error}
-        </p>
-      )}
       <ul className="flex flex-col gap-3">
         {shares.map((share) => {
           const isBusy = busyId === share._id;
@@ -92,7 +53,7 @@ export default function SharedWithYou({
               <div className="flex shrink-0 gap-2">
                 <button
                   type="button"
-                  onClick={() => handleImport(share._id)}
+                  onClick={() => onImport(share._id)}
                   disabled={isBusy}
                   className={BUTTON_PRIMARY}
                 >
@@ -100,7 +61,7 @@ export default function SharedWithYou({
                 </button>
                 <button
                   type="button"
-                  onClick={() => handleDismiss(share._id)}
+                  onClick={() => onDismiss(share._id)}
                   disabled={isBusy}
                   className={BUTTON_SECONDARY}
                 >

@@ -5,6 +5,29 @@ import dbConnect, { getMongoClient } from "@/lib/mongodb";
 import SharedJob from "@/lib/models/SharedJob";
 import { normalizeUsername } from "@/lib/username";
 
+export async function GET() {
+  const session = await auth();
+  if (!session?.user?.id) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  await dbConnect();
+  const shares = await SharedJob.find({ toUserId: session.user.id })
+    .sort({ createdAt: -1 })
+    .lean();
+
+  return NextResponse.json(
+    shares.map((doc) => ({
+      _id: String(doc._id),
+      fromUsername: doc.fromUsername,
+      company: doc.company,
+      role: doc.role,
+      jobPostingUrl: doc.jobPostingUrl,
+      note: doc.note ?? null,
+    }))
+  );
+}
+
 export async function POST(request: NextRequest) {
   const session = await auth();
   if (!session?.user?.id) {

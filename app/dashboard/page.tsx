@@ -7,7 +7,7 @@ import Application from "@/lib/models/Application";
 import SharedJob from "@/lib/models/SharedJob";
 import { BUTTON_PRIMARY, BUTTON_SECONDARY } from "@/lib/ui";
 import DashboardClient from "./DashboardClient";
-import SharedWithYou, { type SharedJobRecord } from "./SharedWithYou";
+import type { SharedJobRecord } from "./SharedWithYou";
 import type { ApplicationRecord } from "./ApplicationsTable";
 
 export default async function DashboardPage() {
@@ -88,9 +88,10 @@ export default async function DashboardPage() {
         </div>
       </div>
 
-      <SharedWithYou shares={shares} />
-
-      <DashboardClient initialApplications={applications} />
+      <DashboardClient
+        initialApplications={applications}
+        initialShares={shares}
+      />
     </main>
   );
 }
