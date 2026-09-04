@@ -2,8 +2,8 @@ import { ObjectId } from "mongodb";
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/auth";
 import dbConnect, { getMongoClient } from "@/lib/mongodb";
-import Application from "@/lib/models/Application";
 import SharedJob from "@/lib/models/SharedJob";
+import { getResultingStatusMap } from "@/lib/shares";
 import { normalizeUsername } from "@/lib/username";
 
 /**
@@ -22,20 +22,7 @@ export async function GET() {
     .sort({ createdAt: -1 })
     .lean();
 
-  const resultingApplicationIds = shares
-    .filter((doc) => doc.status === "imported" && doc.resultingApplicationId)
-    .map((doc) => doc.resultingApplicationId as string);
-
-  const resultingApplications =
-    resultingApplicationIds.length > 0
-      ? await Application.find({ _id: { $in: resultingApplicationIds } })
-          .select("status")
-          .lean()
-      : [];
-
-  const statusByApplicationId = new Map(
-    resultingApplications.map((doc) => [String(doc._id), doc.status])
-  );
+  const statusByApplicationId = await getResultingStatusMap(shares);
 
   return NextResponse.json(
     shares.map((doc) => ({

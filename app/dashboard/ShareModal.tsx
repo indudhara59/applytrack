@@ -3,7 +3,6 @@
 import { useState, type FormEvent } from "react";
 import { BUTTON_PRIMARY, BUTTON_SECONDARY, CARD, INPUT } from "@/lib/ui";
 import type { ApplicationRecord } from "./ApplicationsTable";
-import type { SentShareRecord } from "./SentShares";
 
 export default function ShareModal({
   application,
@@ -14,7 +13,7 @@ export default function ShareModal({
   application: ApplicationRecord | null;
   suggestions: string[];
   onClose: () => void;
-  onShared: (share: SentShareRecord) => void;
+  onShared: (toUsername: string) => void;
 }) {
   const [username, setUsername] = useState("");
   const [note, setNote] = useState("");
@@ -47,15 +46,7 @@ export default function ShareModal({
         throw new Error(data?.error ?? "Failed to share");
       }
 
-      onShared({
-        _id: data._id,
-        toUsername: data.toUsername,
-        company: data.company,
-        role: data.role,
-        jobPostingUrl: data.jobPostingUrl,
-        status: "pending",
-        currentApplicationStatus: null,
-      });
+      onShared(data.toUsername as string);
       setSharedWith(data.toUsername as string);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to share");

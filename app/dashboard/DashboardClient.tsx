@@ -1,14 +1,12 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { BUTTON_PRIMARY } from "@/lib/ui";
 import ApplicationActivity from "./ApplicationActivity";
 import ApplicationsTable, { type ApplicationRecord } from "./ApplicationsTable";
 import ShareModal from "./ShareModal";
 import SharedWithYou, { type SharedJobRecord } from "./SharedWithYou";
-import SentShares, { type SentShareRecord } from "./SentShares";
-import ReceivedShares, { type ReceivedShareRecord } from "./ReceivedShares";
 import StatsSummary from "./StatsSummary";
 
 type MutablePatch = Partial<Pick<ApplicationRecord, "status" | "followUpDone">>;
@@ -47,13 +45,11 @@ function toApplicationRecord(raw: {
 export default function DashboardClient({
   initialApplications,
   initialShares,
-  initialReceivedShares,
-  initialSentShares,
+  initialRecipientSuggestions,
 }: {
   initialApplications: ApplicationRecord[];
   initialShares: SharedJobRecord[];
-  initialReceivedShares: ReceivedShareRecord[];
-  initialSentShares: SentShareRecord[];
+  initialRecipientSuggestions: string[];
 }) {
   const [applications, setApplications] = useState(initialApplications);
   const [pendingId, setPendingId] = useState<string | null>(null);
@@ -63,29 +59,19 @@ export default function DashboardClient({
 
   const [shares, setShares] = useState(initialShares);
   const [busyShareId, setBusyShareId] = useState<string | null>(null);
-  const [receivedShares, setReceivedShares] = useState(initialReceivedShares);
-  const [sentShares, setSentShares] = useState(initialSentShares);
-
-  const recipientSuggestions = useMemo(
-    () =>
-      Array.from(new Set(sentShares.map((s) => s.toUsername))).slice(
-        0,
-        MAX_RECIPIENT_SUGGESTIONS
-      ),
-    [sentShares]
+  const [recipientSuggestions, setRecipientSuggestions] = useState(
+    initialRecipientSuggestions
   );
 
-  // Poll for incoming shares so a job someone else shares with you — and
-  // any status change on a share you've already acted on — shows up without
-  // needing to reload the page. One response drives both the actionable
-  // pending-only inbox and the full "Jobs received" history.
+  // Poll for incoming shares so a job someone else shares with you shows up
+  // without needing to reload the page.
   useEffect(() => {
     const interval = setInterval(async () => {
       try {
         const res = await fetch("/api/shares");
         if (!res.ok) return;
-        const data: ReceivedShareRecord[] = await res.json();
-        setReceivedShares(data);
+        const data: (SharedJobRecord & { status: string })[] =
+          await res.json();
         setShares(data.filter((s) => s.status === "pending"));
       } catch {
         // transient network error — next poll will retry
@@ -131,13 +117,6 @@ export default function DashboardClient({
 
       setApplications((prev) => [toApplicationRecord(created), ...prev]);
       setShares((prev) => prev.filter((s) => s._id !== id));
-      setReceivedShares((prev) =>
-        prev.map((s) =>
-          s._id === id
-            ? { ...s, status: "imported", currentApplicationStatus: created.status }
-            : s
-        )
-      );
     } catch {
       // leave the share in place so the user can retry
     } finally {
@@ -151,9 +130,6 @@ export default function DashboardClient({
       const res = await fetch(`/api/shares/${id}`, { method: "DELETE" });
       if (!res.ok) throw new Error("Failed to dismiss");
       setShares((prev) => prev.filter((s) => s._id !== id));
-      setReceivedShares((prev) =>
-        prev.map((s) => (s._id === id ? { ...s, status: "dismissed" } : s))
-      );
     } catch {
       // leave the share in place so the user can retry
     } finally {
@@ -169,9 +145,6 @@ export default function DashboardClient({
         onImport={handleImportShare}
         onDismiss={handleDismissShare}
       />
-
-      <ReceivedShares shares={receivedShares} />
-      <SentShares shares={sentShares} />
 
       <StatsSummary applications={applications} />
       <ApplicationActivity applications={applications} />
@@ -207,7 +180,13 @@ export default function DashboardClient({
         application={shareTarget}
         suggestions={recipientSuggestions}
         onClose={() => setShareTarget(null)}
-        onShared={(share) => setSentShares((prev) => [share, ...prev])}
+        onShared={(toUsername) =>
+          setRecipientSuggestions((prev) =>
+            prev.includes(toUsername)
+              ? prev
+              : [toUsername, ...prev].slice(0, MAX_RECIPIENT_SUGGESTIONS)
+          )
+        }
       />
     </>
   );

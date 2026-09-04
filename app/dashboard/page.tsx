@@ -1,16 +1,16 @@
 import { ObjectId } from "mongodb";
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { auth, signOut } from "@/auth";
+import { auth } from "@/auth";
 import dbConnect, { getMongoClient } from "@/lib/mongodb";
 import Application from "@/lib/models/Application";
 import SharedJob from "@/lib/models/SharedJob";
-import { BUTTON_PRIMARY, BUTTON_SECONDARY } from "@/lib/ui";
+import { BUTTON_PRIMARY } from "@/lib/ui";
 import DashboardClient from "./DashboardClient";
 import type { SharedJobRecord } from "./SharedWithYou";
-import type { SentShareRecord } from "./SentShares";
-import type { ReceivedShareRecord } from "./ReceivedShares";
 import type { ApplicationRecord } from "./ApplicationsTable";
+
+const MAX_RECIPIENT_SUGGESTIONS = 8;
 
 export default async function DashboardPage() {
   const session = await auth();
@@ -25,34 +25,19 @@ export default async function DashboardPage() {
   if (!userDoc?.username) redirect("/onboarding/username");
 
   await dbConnect();
-  const [docs, receivedShareDocs, sentShareDocs] = await Promise.all([
+  const [docs, receivedShareDocs, previousRecipients] = await Promise.all([
     Application.find({ userId: session.user.id })
       .sort({ dateApplied: -1 })
       .lean(),
-    // All history — pending/imported/dismissed — powers both the
-    // actionable pending-only inbox and the full "Jobs received" record.
-    SharedJob.find({ toUserId: session.user.id })
+    // Pending only — the full share history lives on the /dashboard/shares
+    // page; this is just the actionable inbox.
+    SharedJob.find({ toUserId: session.user.id, status: "pending" })
       .sort({ createdAt: -1 })
       .lean(),
-    SharedJob.find({ fromUserId: session.user.id })
-      .sort({ createdAt: -1 })
-      .lean(),
+    SharedJob.distinct("toUsername", {
+      fromUserId: session.user.id,
+    }) as Promise<string[]>,
   ]);
-
-  const resultingApplicationIds = [...sentShareDocs, ...receivedShareDocs]
-    .filter((doc) => doc.status === "imported" && doc.resultingApplicationId)
-    .map((doc) => doc.resultingApplicationId as string);
-
-  const resultingApplications =
-    resultingApplicationIds.length > 0
-      ? await Application.find({ _id: { $in: resultingApplicationIds } })
-          .select("status")
-          .lean()
-      : [];
-
-  const statusByApplicationId = new Map(
-    resultingApplications.map((doc) => [String(doc._id), doc.status])
-  );
 
   const applications: ApplicationRecord[] = docs.map((doc) => ({
     _id: String(doc._id),
@@ -68,42 +53,13 @@ export default async function DashboardPage() {
     notes: doc.notes ?? null,
   }));
 
-  const pendingShares: SharedJobRecord[] = receivedShareDocs
-    .filter((doc) => doc.status === "pending")
-    .map((doc) => ({
-      _id: String(doc._id),
-      fromUsername: doc.fromUsername,
-      company: doc.company,
-      role: doc.role,
-      jobPostingUrl: doc.jobPostingUrl,
-      note: doc.note ?? null,
-    }));
-
-  const receivedShares: ReceivedShareRecord[] = receivedShareDocs.map(
-    (doc) => ({
-      _id: String(doc._id),
-      fromUsername: doc.fromUsername,
-      company: doc.company,
-      role: doc.role,
-      jobPostingUrl: doc.jobPostingUrl,
-      note: doc.note ?? null,
-      status: doc.status,
-      currentApplicationStatus: doc.resultingApplicationId
-        ? (statusByApplicationId.get(doc.resultingApplicationId) ?? null)
-        : null,
-    })
-  );
-
-  const sentShares: SentShareRecord[] = sentShareDocs.map((doc) => ({
+  const pendingShares: SharedJobRecord[] = receivedShareDocs.map((doc) => ({
     _id: String(doc._id),
-    toUsername: doc.toUsername,
+    fromUsername: doc.fromUsername,
     company: doc.company,
     role: doc.role,
     jobPostingUrl: doc.jobPostingUrl,
-    status: doc.status,
-    currentApplicationStatus: doc.resultingApplicationId
-      ? (statusByApplicationId.get(doc.resultingApplicationId) ?? null)
-      : null,
+    note: doc.note ?? null,
   }));
 
   const displayName = session.user.name ?? session.user.email ?? "there";
@@ -122,28 +78,18 @@ export default async function DashboardPage() {
             </span>
           </p>
         </div>
-        <div className="flex flex-wrap items-center gap-3">
-          <Link href="/dashboard/new" className={BUTTON_PRIMARY}>
-            Add Application
-          </Link>
-          <form
-            action={async () => {
-              "use server";
-              await signOut({ redirectTo: "/login" });
-            }}
-          >
-            <button type="submit" className={BUTTON_SECONDARY}>
-              Sign out
-            </button>
-          </form>
-        </div>
+        <Link href="/dashboard/new" className={BUTTON_PRIMARY}>
+          Add Application
+        </Link>
       </div>
 
       <DashboardClient
         initialApplications={applications}
         initialShares={pendingShares}
-        initialReceivedShares={receivedShares}
-        initialSentShares={sentShares}
+        initialRecipientSuggestions={previousRecipients.slice(
+          0,
+          MAX_RECIPIENT_SUGGESTIONS
+        )}
       />
     </main>
   );
