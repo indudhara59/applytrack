@@ -3,13 +3,18 @@
 import { useState, type FormEvent } from "react";
 import { BUTTON_PRIMARY, BUTTON_SECONDARY, CARD, INPUT } from "@/lib/ui";
 import type { ApplicationRecord } from "./ApplicationsTable";
+import type { SentShareRecord } from "./SentShares";
 
 export default function ShareModal({
   application,
+  suggestions,
   onClose,
+  onShared,
 }: {
   application: ApplicationRecord | null;
+  suggestions: string[];
   onClose: () => void;
+  onShared: (share: SentShareRecord) => void;
 }) {
   const [username, setUsername] = useState("");
   const [note, setNote] = useState("");
@@ -37,12 +42,21 @@ export default function ShareModal({
         }),
       });
 
+      const data = await res.json().catch(() => null);
       if (!res.ok) {
-        const data = await res.json().catch(() => null);
         throw new Error(data?.error ?? "Failed to share");
       }
 
-      setSharedWith(username.trim().toLowerCase());
+      onShared({
+        _id: data._id,
+        toUsername: data.toUsername,
+        company: data.company,
+        role: data.role,
+        jobPostingUrl: data.jobPostingUrl,
+        status: "pending",
+        currentApplicationStatus: null,
+      });
+      setSharedWith(data.toUsername as string);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to share");
     } finally {
@@ -104,6 +118,25 @@ export default function ShareModal({
                 className={INPUT}
               />
             </label>
+
+            {suggestions.length > 0 && (
+              <div className="flex flex-wrap gap-1.5">
+                <span className="text-xs text-slate-400">
+                  Shared with before:
+                </span>
+                {suggestions.map((name) => (
+                  <button
+                    key={name}
+                    type="button"
+                    onClick={() => setUsername(name)}
+                    className="rounded-full bg-slate-100 px-2.5 py-0.5 text-xs font-medium text-slate-600 hover:bg-slate-200"
+                  >
+                    @{name}
+                  </button>
+                ))}
+              </div>
+            )}
+
             <label className="flex flex-col gap-1 text-sm font-medium text-slate-700">
               Note (optional)
               <textarea

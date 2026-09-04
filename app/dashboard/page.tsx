@@ -8,6 +8,7 @@ import SharedJob from "@/lib/models/SharedJob";
 import { BUTTON_PRIMARY, BUTTON_SECONDARY } from "@/lib/ui";
 import DashboardClient from "./DashboardClient";
 import type { SharedJobRecord } from "./SharedWithYou";
+import type { SentShareRecord } from "./SentShares";
 import type { ApplicationRecord } from "./ApplicationsTable";
 
 export default async function DashboardPage() {
@@ -23,14 +24,32 @@ export default async function DashboardPage() {
   if (!userDoc?.username) redirect("/onboarding/username");
 
   await dbConnect();
-  const [docs, shareDocs] = await Promise.all([
+  const [docs, incomingShareDocs, sentShareDocs] = await Promise.all([
     Application.find({ userId: session.user.id })
       .sort({ dateApplied: -1 })
       .lean(),
-    SharedJob.find({ toUserId: session.user.id })
+    SharedJob.find({ toUserId: session.user.id, status: "pending" })
+      .sort({ createdAt: -1 })
+      .lean(),
+    SharedJob.find({ fromUserId: session.user.id })
       .sort({ createdAt: -1 })
       .lean(),
   ]);
+
+  const resultingApplicationIds = sentShareDocs
+    .filter((doc) => doc.status === "imported" && doc.resultingApplicationId)
+    .map((doc) => doc.resultingApplicationId as string);
+
+  const resultingApplications =
+    resultingApplicationIds.length > 0
+      ? await Application.find({ _id: { $in: resultingApplicationIds } })
+          .select("status")
+          .lean()
+      : [];
+
+  const statusByApplicationId = new Map(
+    resultingApplications.map((doc) => [String(doc._id), doc.status])
+  );
 
   const applications: ApplicationRecord[] = docs.map((doc) => ({
     _id: String(doc._id),
@@ -46,13 +65,25 @@ export default async function DashboardPage() {
     notes: doc.notes ?? null,
   }));
 
-  const shares: SharedJobRecord[] = shareDocs.map((doc) => ({
+  const shares: SharedJobRecord[] = incomingShareDocs.map((doc) => ({
     _id: String(doc._id),
     fromUsername: doc.fromUsername,
     company: doc.company,
     role: doc.role,
     jobPostingUrl: doc.jobPostingUrl,
     note: doc.note ?? null,
+  }));
+
+  const sentShares: SentShareRecord[] = sentShareDocs.map((doc) => ({
+    _id: String(doc._id),
+    toUsername: doc.toUsername,
+    company: doc.company,
+    role: doc.role,
+    jobPostingUrl: doc.jobPostingUrl,
+    status: doc.status,
+    currentApplicationStatus: doc.resultingApplicationId
+      ? (statusByApplicationId.get(doc.resultingApplicationId) ?? null)
+      : null,
   }));
 
   const displayName = session.user.name ?? session.user.email ?? "there";
@@ -91,6 +122,7 @@ export default async function DashboardPage() {
       <DashboardClient
         initialApplications={applications}
         initialShares={shares}
+        initialSentShares={sentShares}
       />
     </main>
   );

@@ -12,7 +12,10 @@ export async function GET() {
   }
 
   await dbConnect();
-  const shares = await SharedJob.find({ toUserId: session.user.id })
+  const shares = await SharedJob.find({
+    toUserId: session.user.id,
+    status: "pending",
+  })
     .sort({ createdAt: -1 })
     .lean();
 

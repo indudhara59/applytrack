@@ -18,10 +18,12 @@ export async function DELETE(
   }
 
   await dbConnect();
-  const share = await SharedJob.findOneAndDelete({
-    _id: params.id,
-    toUserId: session.user.id,
-  });
+  // Marked dismissed rather than deleted, so the sender can still see it
+  // was seen and declined.
+  const share = await SharedJob.findOneAndUpdate(
+    { _id: params.id, toUserId: session.user.id, status: "pending" },
+    { $set: { status: "dismissed" } }
+  );
 
   if (!share) {
     return NextResponse.json({ error: "Not found" }, { status: 404 });

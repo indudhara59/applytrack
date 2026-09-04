@@ -1,17 +1,19 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { BUTTON_PRIMARY } from "@/lib/ui";
 import ApplicationActivity from "./ApplicationActivity";
 import ApplicationsTable, { type ApplicationRecord } from "./ApplicationsTable";
 import ShareModal from "./ShareModal";
 import SharedWithYou, { type SharedJobRecord } from "./SharedWithYou";
+import SentShares, { type SentShareRecord } from "./SentShares";
 import StatsSummary from "./StatsSummary";
 
 type MutablePatch = Partial<Pick<ApplicationRecord, "status" | "followUpDone">>;
 
-const SHARES_POLL_INTERVAL_MS = 15000;
+const SHARES_POLL_INTERVAL_MS = 3000;
+const MAX_RECIPIENT_SUGGESTIONS = 8;
 
 function toApplicationRecord(raw: {
   _id: string;
@@ -44,9 +46,11 @@ function toApplicationRecord(raw: {
 export default function DashboardClient({
   initialApplications,
   initialShares,
+  initialSentShares,
 }: {
   initialApplications: ApplicationRecord[];
   initialShares: SharedJobRecord[];
+  initialSentShares: SentShareRecord[];
 }) {
   const [applications, setApplications] = useState(initialApplications);
   const [pendingId, setPendingId] = useState<string | null>(null);
@@ -56,6 +60,16 @@ export default function DashboardClient({
 
   const [shares, setShares] = useState(initialShares);
   const [busyShareId, setBusyShareId] = useState<string | null>(null);
+  const [sentShares, setSentShares] = useState(initialSentShares);
+
+  const recipientSuggestions = useMemo(
+    () =>
+      Array.from(new Set(sentShares.map((s) => s.toUsername))).slice(
+        0,
+        MAX_RECIPIENT_SUGGESTIONS
+      ),
+    [sentShares]
+  );
 
   // Poll for incoming shares so a job someone else shares with you shows up
   // without needing to reload the page.
@@ -139,6 +153,8 @@ export default function DashboardClient({
         onDismiss={handleDismissShare}
       />
 
+      <SentShares shares={sentShares} />
+
       <StatsSummary applications={applications} />
       <ApplicationActivity applications={applications} />
 
@@ -171,7 +187,9 @@ export default function DashboardClient({
 
       <ShareModal
         application={shareTarget}
+        suggestions={recipientSuggestions}
         onClose={() => setShareTarget(null)}
+        onShared={(share) => setSentShares((prev) => [share, ...prev])}
       />
     </>
   );

@@ -22,6 +22,7 @@ export async function POST(
   const share = await SharedJob.findOne({
     _id: params.id,
     toUserId: session.user.id,
+    status: "pending",
   });
 
   if (!share) {
@@ -41,7 +42,11 @@ export async function POST(
     dateApplied: new Date(),
   });
 
-  await SharedJob.deleteOne({ _id: share._id });
+  // Kept (not deleted) so the sender can later see this was acted on, and
+  // can see how the resulting application progresses.
+  share.status = "imported";
+  share.resultingApplicationId = application._id.toString();
+  await share.save();
 
   return NextResponse.json(application, { status: 201 });
 }
