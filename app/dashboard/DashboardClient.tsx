@@ -8,6 +8,7 @@ import ApplicationsTable, { type ApplicationRecord } from "./ApplicationsTable";
 import ShareModal from "./ShareModal";
 import SharedWithYou, { type SharedJobRecord } from "./SharedWithYou";
 import SentShares, { type SentShareRecord } from "./SentShares";
+import ReceivedShares, { type ReceivedShareRecord } from "./ReceivedShares";
 import StatsSummary from "./StatsSummary";
 
 type MutablePatch = Partial<Pick<ApplicationRecord, "status" | "followUpDone">>;
@@ -46,10 +47,12 @@ function toApplicationRecord(raw: {
 export default function DashboardClient({
   initialApplications,
   initialShares,
+  initialReceivedShares,
   initialSentShares,
 }: {
   initialApplications: ApplicationRecord[];
   initialShares: SharedJobRecord[];
+  initialReceivedShares: ReceivedShareRecord[];
   initialSentShares: SentShareRecord[];
 }) {
   const [applications, setApplications] = useState(initialApplications);
@@ -60,6 +63,7 @@ export default function DashboardClient({
 
   const [shares, setShares] = useState(initialShares);
   const [busyShareId, setBusyShareId] = useState<string | null>(null);
+  const [receivedShares, setReceivedShares] = useState(initialReceivedShares);
   const [sentShares, setSentShares] = useState(initialSentShares);
 
   const recipientSuggestions = useMemo(
@@ -71,15 +75,18 @@ export default function DashboardClient({
     [sentShares]
   );
 
-  // Poll for incoming shares so a job someone else shares with you shows up
-  // without needing to reload the page.
+  // Poll for incoming shares so a job someone else shares with you — and
+  // any status change on a share you've already acted on — shows up without
+  // needing to reload the page. One response drives both the actionable
+  // pending-only inbox and the full "Jobs received" history.
   useEffect(() => {
     const interval = setInterval(async () => {
       try {
         const res = await fetch("/api/shares");
         if (!res.ok) return;
-        const data: SharedJobRecord[] = await res.json();
-        setShares(data);
+        const data: ReceivedShareRecord[] = await res.json();
+        setReceivedShares(data);
+        setShares(data.filter((s) => s.status === "pending"));
       } catch {
         // transient network error — next poll will retry
       }
@@ -124,6 +131,13 @@ export default function DashboardClient({
 
       setApplications((prev) => [toApplicationRecord(created), ...prev]);
       setShares((prev) => prev.filter((s) => s._id !== id));
+      setReceivedShares((prev) =>
+        prev.map((s) =>
+          s._id === id
+            ? { ...s, status: "imported", currentApplicationStatus: created.status }
+            : s
+        )
+      );
     } catch {
       // leave the share in place so the user can retry
     } finally {
@@ -137,6 +151,9 @@ export default function DashboardClient({
       const res = await fetch(`/api/shares/${id}`, { method: "DELETE" });
       if (!res.ok) throw new Error("Failed to dismiss");
       setShares((prev) => prev.filter((s) => s._id !== id));
+      setReceivedShares((prev) =>
+        prev.map((s) => (s._id === id ? { ...s, status: "dismissed" } : s))
+      );
     } catch {
       // leave the share in place so the user can retry
     } finally {
@@ -153,6 +170,7 @@ export default function DashboardClient({
         onDismiss={handleDismissShare}
       />
 
+      <ReceivedShares shares={receivedShares} />
       <SentShares shares={sentShares} />
 
       <StatsSummary applications={applications} />

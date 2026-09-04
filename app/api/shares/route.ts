@@ -2,9 +2,15 @@ import { ObjectId } from "mongodb";
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/auth";
 import dbConnect, { getMongoClient } from "@/lib/mongodb";
+import Application from "@/lib/models/Application";
 import SharedJob from "@/lib/models/SharedJob";
 import { normalizeUsername } from "@/lib/username";
 
+/**
+ * Full history (pending/imported/dismissed), not just pending — this feeds
+ * both the actionable pending-only inbox and the full "Jobs received"
+ * record on the client, from a single poll.
+ */
 export async function GET() {
   const session = await auth();
   if (!session?.user?.id) {
@@ -12,12 +18,24 @@ export async function GET() {
   }
 
   await dbConnect();
-  const shares = await SharedJob.find({
-    toUserId: session.user.id,
-    status: "pending",
-  })
+  const shares = await SharedJob.find({ toUserId: session.user.id })
     .sort({ createdAt: -1 })
     .lean();
+
+  const resultingApplicationIds = shares
+    .filter((doc) => doc.status === "imported" && doc.resultingApplicationId)
+    .map((doc) => doc.resultingApplicationId as string);
+
+  const resultingApplications =
+    resultingApplicationIds.length > 0
+      ? await Application.find({ _id: { $in: resultingApplicationIds } })
+          .select("status")
+          .lean()
+      : [];
+
+  const statusByApplicationId = new Map(
+    resultingApplications.map((doc) => [String(doc._id), doc.status])
+  );
 
   return NextResponse.json(
     shares.map((doc) => ({
@@ -27,6 +45,10 @@ export async function GET() {
       role: doc.role,
       jobPostingUrl: doc.jobPostingUrl,
       note: doc.note ?? null,
+      status: doc.status,
+      currentApplicationStatus: doc.resultingApplicationId
+        ? (statusByApplicationId.get(doc.resultingApplicationId) ?? null)
+        : null,
     }))
   );
 }

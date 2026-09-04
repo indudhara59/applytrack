@@ -2,18 +2,23 @@ import { STATUS_BADGE_STYLES, type ApplicationStatus } from "@/lib/applicationSt
 import { CARD } from "@/lib/ui";
 import { SHARE_STATUS_LABELS, SHARE_STATUS_STYLES, type ShareStatus } from "./shareStatus";
 
-export interface SentShareRecord {
+export interface ReceivedShareRecord {
   _id: string;
-  toUsername: string;
+  fromUsername: string;
   company: string;
   role: string;
   jobPostingUrl: string;
+  note: string | null;
   status: ShareStatus;
-  /** Current status of the resulting application, once the recipient has added it. */
+  /** Current status of the resulting application, once you've added it. */
   currentApplicationStatus: ApplicationStatus | null;
 }
 
-export default function SentShares({ shares }: { shares: SentShareRecord[] }) {
+export default function ReceivedShares({
+  shares,
+}: {
+  shares: ReceivedShareRecord[];
+}) {
   if (shares.length === 0) return null;
 
   const total = shares.length;
@@ -26,11 +31,9 @@ export default function SentShares({ shares }: { shares: SentShareRecord[] }) {
 
   return (
     <div className={`${CARD} mb-6 p-5`}>
-      <p className="mb-1 text-sm font-medium text-slate-500">
-        Jobs you&apos;ve shared
-      </p>
+      <p className="mb-1 text-sm font-medium text-slate-500">Jobs received</p>
       <p className="mb-4 text-xs text-slate-400">
-        {total} shared · {applied} applied · {pending} pending ·{" "}
+        {total} received · {applied} applied · {pending} pending ·{" "}
         {dismissed} dismissed
       </p>
 
@@ -45,7 +48,7 @@ export default function SentShares({ shares }: { shares: SentShareRecord[] }) {
                 Role
               </th>
               <th className="px-4 py-2 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">
-                To
+                From
               </th>
               <th className="px-4 py-2 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">
                 Status
@@ -70,7 +73,7 @@ export default function SentShares({ shares }: { shares: SentShareRecord[] }) {
                 </td>
                 <td className="px-4 py-2 text-slate-700">{share.role}</td>
                 <td className="px-4 py-2 text-slate-700">
-                  @{share.toUsername}
+                  @{share.fromUsername}
                 </td>
                 <td className="px-4 py-2">
                   <span
