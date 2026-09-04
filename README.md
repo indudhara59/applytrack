@@ -15,6 +15,9 @@ things stand.
 - Dashboard stats: total applications, a breakdown by status, and how many
   follow-ups are due in the next 7 days
 - Responsive layout, empty states, and loading/error states
+- Personal API key (Dashboard → Settings) plus a companion Chrome extension
+  (`/extension`) that auto-adds an application when you apply to a job on
+  LinkedIn — see [`extension/README.md`](extension/README.md)
 
 ## Tech stack
 

@@ -37,6 +37,12 @@ export default async function DashboardLayout({
               >
                 Shared Jobs
               </Link>
+              <Link
+                href="/dashboard/settings"
+                className="text-sm font-medium text-slate-600 hover:text-slate-900"
+              >
+                Settings
+              </Link>
             </div>
           </div>
           <form
