@@ -32,12 +32,14 @@ export default function ApplicationsTable({
   onStatusChange,
   onToggleFollowUpDone,
   onShare,
+  onDelete,
 }: {
   applications: ApplicationRecord[];
   pendingId: string | null;
   onStatusChange: (id: string, status: ApplicationStatus) => void;
   onToggleFollowUpDone: (id: string, next: boolean) => void;
   onShare: (application: ApplicationRecord) => void;
+  onDelete: (application: ApplicationRecord) => void;
 }) {
   const [statusFilter, setStatusFilter] = useState<ApplicationStatus | "All">(
     "All"
@@ -56,6 +58,17 @@ export default function ApplicationsTable({
       return sortDirection === "asc" ? aTime - bTime : bTime - aTime;
     });
   }, [applications, statusFilter, sortDirection]);
+
+  function handleDeleteClick(application: ApplicationRecord) {
+    if (
+      !window.confirm(
+        `Delete the application for ${application.company}? This cannot be undone.`
+      )
+    ) {
+      return;
+    }
+    onDelete(application);
+  }
 
   return (
     <div>
@@ -211,22 +224,36 @@ export default function ApplicationsTable({
                   </td>
                   <td className="relative whitespace-nowrap px-4 py-3 text-right">
                     <RowLinkOverlay href={jobUrl} />
-                    <div className="relative flex justify-end gap-3">
+                    <div className="relative flex justify-end gap-1">
                       {jobUrl && (
                         <button
                           type="button"
                           onClick={() => onShare(application)}
-                          className="text-sm font-medium text-indigo-600 hover:text-indigo-500 hover:underline"
+                          title="Share"
+                          aria-label={`Share application for ${application.company}`}
+                          className="rounded-md p-1.5 text-indigo-600 hover:bg-indigo-50 hover:text-indigo-500"
                         >
-                          Share
+                          <ShareIcon />
                         </button>
                       )}
                       <Link
                         href={`/dashboard/${application._id}/edit`}
-                        className="text-sm font-medium text-indigo-600 hover:text-indigo-500 hover:underline"
+                        title="Edit"
+                        aria-label={`Edit application for ${application.company}`}
+                        className="rounded-md p-1.5 text-indigo-600 hover:bg-indigo-50 hover:text-indigo-500"
                       >
-                        Edit
+                        <EditIcon />
                       </Link>
+                      <button
+                        type="button"
+                        disabled={isPending}
+                        onClick={() => handleDeleteClick(application)}
+                        title="Delete"
+                        aria-label={`Delete application for ${application.company}`}
+                        className="rounded-md p-1.5 text-red-600 hover:bg-red-50 hover:text-red-500 disabled:cursor-not-allowed disabled:opacity-50"
+                      >
+                        <DeleteIcon />
+                      </button>
                     </div>
                   </td>
                 </tr>
@@ -246,6 +273,51 @@ export default function ApplicationsTable({
         </table>
       </div>
     </div>
+  );
+}
+
+function ShareIcon() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4" aria-hidden="true">
+      <path
+        stroke="currentColor"
+        strokeWidth="1.75"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        d="M8.7 10.7l6.6-3.4M8.7 13.3l6.6 3.4"
+      />
+      <circle cx="6" cy="12" r="2.25" stroke="currentColor" strokeWidth="1.75" />
+      <circle cx="18" cy="6" r="2.25" stroke="currentColor" strokeWidth="1.75" />
+      <circle cx="18" cy="18" r="2.25" stroke="currentColor" strokeWidth="1.75" />
+    </svg>
+  );
+}
+
+function EditIcon() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4" aria-hidden="true">
+      <path
+        stroke="currentColor"
+        strokeWidth="1.75"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"
+      />
+    </svg>
+  );
+}
+
+function DeleteIcon() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4" aria-hidden="true">
+      <path
+        stroke="currentColor"
+        strokeWidth="1.75"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        d="M4 7h16M9 7V5a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2m2 0-.7 12.1a2 2 0 0 1-2 1.9H9.7a2 2 0 0 1-2-1.9L7 7h10ZM10 11v6M14 11v6"
+      />
+    </svg>
   );
 }
 

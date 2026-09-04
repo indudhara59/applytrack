@@ -106,6 +106,23 @@ export default function DashboardClient({
     }
   }
 
+  async function handleDeleteApplication(application: ApplicationRecord) {
+    setPendingId(application._id);
+    try {
+      const res = await fetch(`/api/applications/${application._id}`, {
+        method: "DELETE",
+      });
+      if (!res.ok) throw new Error("Failed to delete");
+      setApplications((prev) =>
+        prev.filter((a) => a._id !== application._id)
+      );
+    } catch {
+      // leave it in place so the user can retry
+    } finally {
+      setPendingId(null);
+    }
+  }
+
   async function handleImportShare(id: string) {
     setBusyShareId(id);
     try {
@@ -173,6 +190,7 @@ export default function DashboardClient({
             updateApplication(id, { followUpDone: next })
           }
           onShare={setShareTarget}
+          onDelete={handleDeleteApplication}
         />
       )}
 
